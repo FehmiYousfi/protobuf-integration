@@ -1,0 +1,16 @@
+// example.proto
+syntax = "proto3";
+
+package example;
+
+message Request {
+  string message = 1;
+}
+
+message Response {
+  string reply = 1;
+}
+
+service ExampleService {
+  rpc ProcessRequest(Request) returns (Response);
+}
