@@ -1,0 +1,48 @@
+name: Docker Build and Run
+
+on:
+  push:
+    branches:
+      - main  # Trigger on pushes to the main branch
+  pull_request:
+    branches:
+      - main  # Trigger on pull requests to the main branch
+
+jobs:
+  build-and-run:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Check out the repository
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Build the Docker image
+      - name: Build Docker image
+        run: docker build -t protobuf-cpp-server .
+
+      # Run the Docker container
+      - name: Run Docker container
+        run: |
+          docker run -d -p 50051:50051 --name protobuf-server protobuf-cpp-server
+          sleep 10  # Wait for the server to start
+
+      # Test the microservice using the test script
+      - name: Test the microservice
+        run: |
+          echo "Installing Python and gRPC tools..."
+          sudo apt-get update
+          sudo apt-get install -y python3 python3-pip
+          pip install grpcio grpcio-tools
+
+          echo "Generating gRPC code..."
+          python3 -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. example.proto
+
+          echo "Running tests..."
+          python3 test/runner-test.py
+
+      # Clean up
+      - name: Stop and remove Docker container
+        run: |
+          docker stop protobuf-server
+          docker rm protobuf-server
